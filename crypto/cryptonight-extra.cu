@@ -84,15 +84,24 @@ void cryptonight_extra_gpu_prepare(const uint32_t threads, const uint32_t * __re
 		uint32_t ctx_b[4];
 		uint32_t ctx_key1[40];
 		uint32_t ctx_key2[40];
+
+#if 0
 		uint32_t input[19];
-
 		MEMCPY4(input, d_input, 19);
-
 		uint32_t nonce = startNonce + thread;
 		*(((uint8_t *)input) + 39) = nonce & 0xff;
 		*(((uint8_t *)input) + 40) = (nonce >> 8) & 0xff;
 		*(((uint8_t *)input) + 41) = (nonce >> 16) & 0xff;
 		*(((uint8_t *)input) + 42) = (nonce >> 24) & 0xff;
+#else
+		uint32_t input[20];
+		MEMCPY4(input, d_input, 20);
+		uint32_t nonce = startNonce + thread;
+		*(((uint8_t *)input) + 76) = nonce & 0xff;
+		*(((uint8_t *)input) + 77) = (nonce >> 8) & 0xff;
+		*(((uint8_t *)input) + 78) = (nonce >> 16) & 0xff;
+		*(((uint8_t *)input) + 79) = (nonce >> 24) & 0xff;
+#endif
 
 		cn_keccak(input, ctx_state);
 		MEMCPY4(&d_ctx_state[thread * 50U], ctx_state, 50);

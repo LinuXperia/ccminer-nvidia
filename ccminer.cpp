@@ -1609,7 +1609,7 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 #endif
 			sha256d(merkle_root, merkle_root, 64);
 	}
-	
+
 	/* Increment extranonce2 */
 	for (i = 0; i < (int)sctx->xnonce2_size && !++sctx->job.xnonce2[i]; i++);
 
@@ -1728,6 +1728,7 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 		case ALGO_NEOSCRYPT:
 		case ALGO_SCRYPT:
 		case ALGO_SCRYPT_JANE:
+		case ALGO_KEVA:
 			work_set_target(work, sctx->job.diff / (65536.0 * opt_difficulty));
 			break;
 		case ALGO_ALLIUM:
@@ -2302,6 +2303,7 @@ static void *miner_thread(void *userdata)
 			case ALGO_SCRYPT:
 			case ALGO_SONOA:
 			case ALGO_VELTOR:
+			case ALGO_KEVA:
 				minmax = 0x80000;
 				break;
 			case ALGO_CRYPTOLIGHT:
@@ -2485,6 +2487,9 @@ static void *miner_thread(void *userdata)
 			rc = scanhash_scrypt(thr_id, &work, max_nonce, &hashes_done,
 				NULL, &tv_start, &tv_end);
 			break;
+		case ALGO_KEVA:
+			rc = scanhash_cryptonight_keva(thr_id, &work, max_nonce, &hashes_done, 1);
+			break;
 		case ALGO_SCRYPT_JANE:
 			rc = scanhash_scrypt_jane(thr_id, &work, max_nonce, &hashes_done,
 				NULL, &tv_start, &tv_end);
@@ -2594,6 +2599,7 @@ static void *miner_thread(void *userdata)
 			case ALGO_HEAVY:
 			case ALGO_SCRYPT:
 			case ALGO_SCRYPT_JANE:
+			case ALGO_KEVA:
 			//case ALGO_WHIRLPOOLX:
 				work.nonces[0] = nonceptr[0];
 				work.nonces[1] = nonceptr[2];
@@ -3049,7 +3055,7 @@ wait_stratum_url:
 			}
 			pthread_mutex_unlock(&g_work_lock);
 		}
-		
+
 		// check we are on the right pool
 		if (switchn != pool_switch_count) goto pool_switched;
 

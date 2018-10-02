@@ -76,6 +76,7 @@ enum sha_algos {
 	ALGO_MONERO,
 	ALGO_GRAFT,
 	ALGO_STELLITE,
+	ALGO_KEVA,
 	ALGO_AUTO,
 	ALGO_COUNT
 };
@@ -154,6 +155,7 @@ static const char *algo_names[] = {
 	"monero",
 	"graft",
 	"stellite",
+	"keva",
 	"auto", /* reserved for multi algo */
 	""
 };
@@ -207,6 +209,8 @@ static inline int algo_to_int(char* arg)
 			i = ALGO_WHIRLPOOL;
 		else if (!strcasecmp("ziftr", arg))
 			i = ALGO_ZR5;
+		else if (!strcasecmp("keva", arg))
+			i = ALGO_KEVA;
 		else
 			i = -1;
 	}
