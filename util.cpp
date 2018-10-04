@@ -13,6 +13,10 @@
 #include <ccminer-config.h>
 
 #include <stdio.h>
+
+#include "uint256.h"
+#include "bignum.hpp"
+
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -293,7 +297,7 @@ static size_t upload_data_cb(void *ptr, size_t size, size_t nmemb,
 static int seek_data_cb(void *user_data, curl_off_t offset, int origin)
 {
 	struct upload_buffer *ub = (struct upload_buffer *)user_data;
-	
+
 	switch (origin) {
 	case SEEK_SET:
 		ub->pos = (size_t)offset;
@@ -385,7 +389,7 @@ static int sockopt_keepalive_cb(void *userdata, curl_socket_t fd,
 	DWORD outputBytes;
 #endif
 
-#ifndef WIN32	
+#ifndef WIN32
 	if (unlikely(setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &keepalive,
 		sizeof(keepalive))))
 		return 1;
@@ -409,7 +413,7 @@ static int sockopt_keepalive_cb(void *userdata, curl_socket_t fd,
 	struct tcp_keepalive vals;
 	vals.onoff = 1;
 	vals.keepalivetime = tcp_keepidle * 1000;
-	vals.keepaliveinterval = tcp_keepintvl * 1000;	
+	vals.keepaliveinterval = tcp_keepintvl * 1000;
 	if (unlikely(WSAIoctl(fd, SIO_KEEPALIVE_VALS, &vals, sizeof(vals),
 		NULL, 0, &outputBytes, NULL, NULL)))
 		return 1;
@@ -788,7 +792,7 @@ bool fulltest(const uint32_t *hash, const uint32_t *target)
 {
 	int i;
 	bool rc = true;
-	
+
 	for (i = 7; i >= 0; i--) {
 		if (hash[i] > target[i]) {
 			rc = false;
@@ -806,7 +810,7 @@ bool fulltest(const uint32_t *hash, const uint32_t *target)
 	if ((!rc && opt_debug) || opt_debug_diff) {
 		uint32_t hash_be[8], target_be[8];
 		char *hash_str, *target_str;
-		
+
 		for (i = 0; i < 8; i++) {
 			be32enc(hash_be + i, hash[7 - i]);
 			be32enc(target_be + i, target[7 - i]);
@@ -852,6 +856,23 @@ void work_set_target(struct work* work, double diff)
 	work->targetdiff = diff;
 }
 
+void work_set_target_keva(struct work* work, double diff)
+{
+	uint256 keva_diff((uint64_t)(diff * 1000));
+	uint256 diff1;
+	diff1.SetHex("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+	CBigNum diff1_big(diff1);
+	CBigNum keva_diff_big(keva_diff);
+	diff1_big /= keva_diff_big;
+	uint256 result = diff1_big.getuint256();
+	int m;
+	for (m = 0; m < 4; m++) {
+		uint64_t part = result.Get64(m);
+		work->target[2*m] = part & 0xffffffff;
+		work->target[2*m + 1] = (part >> 32) & 0xffffffff;
+	}
+	work->targetdiff = diff;
+}
 
 // Only used by longpoll pools
 double target_to_diff(uint32_t* target)
@@ -882,7 +903,7 @@ double target_to_diff(uint32_t* target)
 static bool send_line(curl_socket_t sock, char *s)
 {
 	ssize_t len, sent = 0;
-	
+
 	len = (ssize_t)strlen(s);
 	s[len++] = '\n';
 
@@ -1597,7 +1618,7 @@ static bool stratum_reconnect(struct stratum_ctx *sctx, json_t *params)
 		port = (int) json_integer_value(port_val);
 	if (!host || !port)
 		return false;
-	
+
 	free(sctx->url);
 	sctx->url = (char*)malloc(32 + strlen(host));
 	sprintf(sctx->url, "stratum+tcp://%s:%d", host, port);
@@ -1800,7 +1821,7 @@ static bool stratum_show_message(struct stratum_ctx *sctx, json_t *id, json_t *p
 	val = json_array_get(params, 0);
 	if (val)
 		applog(LOG_NOTICE, "MESSAGE FROM SERVER: %s", json_string_value(val));
-	
+
 	if (!id || json_is_null(id))
 		return true;
 

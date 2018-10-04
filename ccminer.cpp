@@ -1728,8 +1728,11 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 		case ALGO_NEOSCRYPT:
 		case ALGO_SCRYPT:
 		case ALGO_SCRYPT_JANE:
-		case ALGO_KEVA:
 			work_set_target(work, sctx->job.diff / (65536.0 * opt_difficulty));
+			break;
+		case ALGO_KEVA:
+			//work_set_target_keva(work, sctx->job.diff);
+			work_set_target_keva(work, 32);
 			break;
 		case ALGO_ALLIUM:
 		case ALGO_DMD_GR:
