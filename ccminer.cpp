@@ -1731,8 +1731,7 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 			work_set_target(work, sctx->job.diff / (65536.0 * opt_difficulty));
 			break;
 		case ALGO_KEVA:
-			//work_set_target_keva(work, sctx->job.diff);
-			work_set_target_keva(work, 32);
+			work_set_target_keva(work, sctx->job.diff);
 			break;
 		case ALGO_ALLIUM:
 		case ALGO_DMD_GR:
