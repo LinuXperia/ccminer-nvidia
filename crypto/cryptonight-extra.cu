@@ -153,7 +153,9 @@ void cryptonight_extra_gpu_final(const uint32_t threads, uint32_t startNonce, co
 		if(branch == 3)
 			cn_skein((const uint8_t *)state, 200, hash);
 
-		if(hash[7] <= d_target[1] && hash[6] <= d_target[0])
+		uint64_t hashVal = (((uint64_t)hash[7]) << 32) | hash[6];
+		uint64_t targetVal = (((uint64_t)d_target[1]) << 32) | d_target[0];
+		if (hashVal <= targetVal)
 		{
 			const uint32_t nonce = startNonce + thread;
 			uint32_t tmp = atomicExch(resNonces, nonce);

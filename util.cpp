@@ -858,9 +858,9 @@ void work_set_target(struct work* work, double diff)
 
 void work_set_target_keva(struct work* work, double diff)
 {
-	uint256 keva_diff((uint64_t)(diff * 1000));
-	uint256 diff1;
-	diff1.SetHex("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF");
+	uint256 keva_diff((uint64_t)diff);
+	uint256 diff1; // value of difficulty 1
+	diff1.SetHex("0x000ffff000000000000000000000000000000000000000000000000000000000");
 	CBigNum diff1_big(diff1);
 	CBigNum keva_diff_big(keva_diff);
 	diff1_big /= keva_diff_big;
