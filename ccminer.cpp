@@ -1005,6 +1005,10 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 			be32enc(&ntime, work->data[17]);
 			be32enc(&nonce, work->data[19]);
 			break;
+		case ALGO_KEVA:
+			be32enc(&ntime, work->data[17]);
+			be32enc(&nonce, work->data[19]);
+			break;
 		default:
 			le32enc(&ntime, work->data[17]);
 			le32enc(&nonce, work->data[19]);
@@ -1675,6 +1679,16 @@ static bool stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 		memcpy(&work->data[12], sctx->job.coinbase, 32); // merkle_root
 		work->data[20] = 0x80000000;
 		if (opt_debug) applog_hex(work->data, 80);
+	} else if (opt_algo == ALGO_KEVA) {
+		work->data[0] = be32dec(sctx->job.version);
+		for (i = 0; i < 8; i++) {
+			work->data[1 + i] = be32dec((uint32_t *)sctx->job.prevhash + i);
+		}
+		for (i = 0; i < 8; i++) {
+			work->data[9 + i] = le32dec((uint32_t *)merkle_root + i);
+		}
+		work->data[17] = be32dec(sctx->job.ntime);
+		work->data[18] = be32dec(sctx->job.nbits);
 	} else {
 		for (i = 0; i < 8; i++)
 			work->data[9 + i] = be32dec((uint32_t *)merkle_root + i);
@@ -2601,7 +2615,7 @@ static void *miner_thread(void *userdata)
 			case ALGO_HEAVY:
 			case ALGO_SCRYPT:
 			case ALGO_SCRYPT_JANE:
-			case ALGO_KEVA:
+			//case ALGO_KEVA:
 			//case ALGO_WHIRLPOOLX:
 				work.nonces[0] = nonceptr[0];
 				work.nonces[1] = nonceptr[2];
