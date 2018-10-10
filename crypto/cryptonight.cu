@@ -29,7 +29,7 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 
 	uint32_t *ptarget = work->target;
 	uint8_t *pdata = (uint8_t*) work->data;
-	uint32_t *nonceptr = (uint32_t*) (&pdata[37]);
+	uint32_t *nonceptr = (uint32_t*) (&work->data[19]);
 	const uint32_t first_nonce = *nonceptr;
 	uint32_t nonce = first_nonce;
 	int dev_id = device_map[thr_id];
@@ -258,7 +258,6 @@ extern "C" int scanhash_cryptonight(int thr_id, struct work* work, uint32_t max_
 	}
 
 	throughput = cn_blocks*cn_threads;
-
 	do
 	{
 		const uint32_t Htarg = ptarget[7];

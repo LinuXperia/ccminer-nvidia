@@ -2319,12 +2319,12 @@ static void *miner_thread(void *userdata)
 			case ALGO_SCRYPT:
 			case ALGO_SONOA:
 			case ALGO_VELTOR:
-			case ALGO_KEVA:
 				minmax = 0x80000;
 				break;
 			case ALGO_CRYPTOLIGHT:
 			case ALGO_CRYPTONIGHT:
 			case ALGO_SCRYPT_JANE:
+			case ALGO_KEVA:
 				minmax = 0x1000;
 				break;
 			}
