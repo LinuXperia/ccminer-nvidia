@@ -168,7 +168,13 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 done:
 	gpulog(LOG_DEBUG, thr_id, "nonce %08x exit", nonce);
 	work->valid_nonces = res;
-	*nonceptr = nonce;
+	if (res == 1) {
+		*nonceptr = work->nonces[0];
+	} else if (res == 2) {
+		*nonceptr = max(work->nonces[0], work->nonces[1]);
+	} else {
+		*nonceptr = nonce;
+	}
 	return res;
 }
 
