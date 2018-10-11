@@ -667,12 +667,27 @@ bool jobj_binary(const json_t *obj, const char *key, void *buf, size_t buflen)
 	return true;
 }
 
+static double keva_network_diff(struct work *work)
+{
+	uint32_t nbits = work->data[18];
+	uint32_t bits = (nbits & 0xffffff);
+	int16_t shift = (swab32(nbits) & 0xff);
+	double d = (double)0x0ffff0 / (double)bits;
+	for (int m=shift; m < 31; m++) d *= 2.0;
+	for (int m=31; m < shift; m++) d /= 2.0;
+	return d;
+}
+
 /* compute nbits to get the network diff */
 static void calc_network_diff(struct work *work)
 {
 	// sample for diff 43.281 : 1c05ea29
 	// todo: endian reversed on longpoll could be zr5 specific...
 	uint32_t nbits = have_longpoll ? work->data[18] : swab32(work->data[18]);
+	if (opt_algo == ALGO_KEVA) {
+		net_diff = keva_network_diff(work);
+		return;
+	}
 	if (opt_algo == ALGO_LBRY) nbits = swab32(work->data[26]);
 	if (opt_algo == ALGO_DECRED) nbits = work->data[29];
 	if (opt_algo == ALGO_SIA) nbits = work->data[11]; // unsure if correct
