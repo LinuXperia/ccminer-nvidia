@@ -112,8 +112,21 @@ void cryptonight_extra_gpu_prepare(const uint32_t threads, const uint32_t * __re
 		XOR_BLOCKS_DST(&ctx_state[0], &ctx_state[4], ctx_a);
 		XOR_BLOCKS_DST(&ctx_state[2], &ctx_state[6], ctx_b);
 		MEMCPY4(&d_ctx_a[thread * 4U], ctx_a, 4);
+#if 0
+		// Variant 1
 		MEMCPY4(&d_ctx_b[thread * 4U], ctx_b, 4);
+#else
+		memcpy(d_ctx_b + thread * 12, ctx_b, 4 * 4);
+    // bx1
+    XOR_BLOCKS_DST(ctx_state + 8, ctx_state + 10, ctx_b);
+    memcpy(d_ctx_b + thread * 12 + 4, ctx_b, 4 * 4);
+    // division_result
+    memcpy(d_ctx_b + thread * 12 + 2 * 4, ctx_state + 24, 4 * 2);
+    // sqrt_result
+    memcpy(d_ctx_b + thread * 12 + 2 * 4 + 2, ctx_state + 26, 4 * 2);
+#endif
 
+#if 0
 		if (variant) {
 			uint2 tweak = AS_UINT2(&ctx_state[24]);
 			//tweak.x ^= (input[8] >> 24) | (input[9] << 8);
@@ -121,6 +134,7 @@ void cryptonight_extra_gpu_prepare(const uint32_t threads, const uint32_t * __re
 			tweak.y ^= __byte_perm(input[9], input[10], 0x6543);
 			MEMCPY4(&d_ctx_tweak[thread], &tweak, 2);
 		}
+#endif
 	}
 }
 
