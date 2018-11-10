@@ -140,5 +140,5 @@ void cryptonight_core_cuda(int thr_id, uint32_t blocks, uint32_t threads, uint64
 void cryptonight_extra_setData(int thr_id, const void *data, const void *ptarget);
 void cryptonight_extra_init(int thr_id);
 void cryptonight_extra_free(int thr_id);
-void cryptonight_extra_prepare(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *d_ctx_state, uint32_t *d_ctx_a, uint32_t *d_ctx_b, uint32_t *d_ctx_key1, uint32_t *d_ctx_key2, int variant, uint64_t *d_ctx_tweak);
-void cryptonight_extra_final(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *resnonce, uint32_t *d_ctx_state);
+void cryptonight_extra_prepare(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *d_ctx_state, uint32_t *d_ctx_a, uint32_t *d_ctx_b, uint32_t *d_ctx_key1, uint32_t *d_ctx_key2, int variant, uint64_t *d_ctx_tweak, bool isMonero);
+void cryptonight_extra_final(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *resnonce, uint32_t *d_ctx_state, bool isMonero);

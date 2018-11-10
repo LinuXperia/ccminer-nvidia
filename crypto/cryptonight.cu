@@ -110,14 +110,12 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 	throughput = cn_blocks*cn_threads;
 	do
 	{
-		// JWU hack!!!!
-		//ptarget[7] = 0x00ffffff;
 		const uint32_t Htarg = ptarget[7];
 		uint32_t resNonces[2] = { UINT32_MAX, UINT32_MAX };
 		cryptonight_extra_setData(thr_id, pdata, ptarget);
-		cryptonight_extra_prepare(thr_id, throughput, nonce, d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id]);
+		cryptonight_extra_prepare(thr_id, throughput, nonce, d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id], false);
 		cryptonight_core_cuda(thr_id, cn_blocks, cn_threads, d_long_state[thr_id], d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id]);
-		cryptonight_extra_final(thr_id, throughput, nonce, resNonces, d_ctx_state[thr_id]);
+		cryptonight_extra_final(thr_id, throughput, nonce, resNonces, d_ctx_state[thr_id], false);
 
 		*hashes_done = nonce - first_nonce + throughput;
 		if(resNonces[0] != UINT32_MAX)
@@ -270,9 +268,9 @@ extern "C" int scanhash_cryptonight(int thr_id, struct work* work, uint32_t max_
 		uint32_t resNonces[2] = { UINT32_MAX, UINT32_MAX };
 
 		cryptonight_extra_setData(thr_id, pdata, ptarget);
-		cryptonight_extra_prepare(thr_id, throughput, nonce, d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id]);
+		cryptonight_extra_prepare(thr_id, throughput, nonce, d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id], true);
 		cryptonight_core_cuda(thr_id, cn_blocks, cn_threads, d_long_state[thr_id], d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id]);
-		cryptonight_extra_final(thr_id, throughput, nonce, resNonces, d_ctx_state[thr_id]);
+		cryptonight_extra_final(thr_id, throughput, nonce, resNonces, d_ctx_state[thr_id], true);
 
 		*hashes_done = nonce - first_nonce + throughput;
 

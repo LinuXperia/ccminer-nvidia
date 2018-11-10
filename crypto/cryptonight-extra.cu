@@ -74,7 +74,7 @@ void cryptonight_aes_set_key(uint32_t * __restrict__ key, const uint32_t * __res
 __global__
 void cryptonight_extra_gpu_prepare(const uint32_t threads, const uint32_t * __restrict__ d_input, uint32_t startNonce,
 	uint32_t * __restrict__ d_ctx_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b,
-	uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2, int variant, uint64_t * d_ctx_tweak)
+	uint32_t * __restrict__ d_ctx_key1, uint32_t * __restrict__ d_ctx_key2, int variant, uint64_t * d_ctx_tweak, bool isMonero)
 {
 	const uint32_t thread = (blockDim.x * blockIdx.x + threadIdx.x);
 	if(thread < threads)
@@ -85,24 +85,22 @@ void cryptonight_extra_gpu_prepare(const uint32_t threads, const uint32_t * __re
 		uint32_t ctx_key1[40];
 		uint32_t ctx_key2[40];
 
-#if 0
-		uint32_t input[19];
-		MEMCPY4(input, d_input, 19);
-		uint32_t nonce = startNonce + thread;
-		*(((uint8_t *)input) + 39) = nonce & 0xff;
-		*(((uint8_t *)input) + 40) = (nonce >> 8) & 0xff;
-		*(((uint8_t *)input) + 41) = (nonce >> 16) & 0xff;
-		*(((uint8_t *)input) + 42) = (nonce >> 24) & 0xff;
-#else
 		uint32_t input[20];
-		MEMCPY4(input, d_input, 20);
-		uint32_t nonce = startNonce + thread;
-		*(((uint8_t *)input) + 76) = nonce & 0xff;
-		*(((uint8_t *)input) + 77) = (nonce >> 8) & 0xff;
-		*(((uint8_t *)input) + 78) = (nonce >> 16) & 0xff;
-		*(((uint8_t *)input) + 79) = (nonce >> 24) & 0xff;
-#endif
-
+		if (isMonero) {
+			MEMCPY4(input, d_input, 19);
+			uint32_t nonce = startNonce + thread;
+			*(((uint8_t *)input) + 39) = nonce & 0xff;
+			*(((uint8_t *)input) + 40) = (nonce >> 8) & 0xff;
+			*(((uint8_t *)input) + 41) = (nonce >> 16) & 0xff;
+			*(((uint8_t *)input) + 42) = (nonce >> 24) & 0xff;
+		} else {
+			MEMCPY4(input, d_input, 20);
+			uint32_t nonce = startNonce + thread;
+			*(((uint8_t *)input) + 76) = nonce & 0xff;
+			*(((uint8_t *)input) + 77) = (nonce >> 8) & 0xff;
+			*(((uint8_t *)input) + 78) = (nonce >> 16) & 0xff;
+			*(((uint8_t *)input) + 79) = (nonce >> 24) & 0xff;
+		}
 		cn_keccak(input, ctx_state);
 		MEMCPY4(&d_ctx_state[thread * 50U], ctx_state, 50);
 
@@ -128,7 +126,7 @@ void cryptonight_extra_gpu_prepare(const uint32_t threads, const uint32_t * __re
 
 __global__
 void cryptonight_extra_gpu_final(const uint32_t threads, uint32_t startNonce, const uint32_t * __restrict__ d_target,
-	uint32_t * __restrict__ resNonces, uint32_t * __restrict__ d_ctx_state)
+	uint32_t * __restrict__ resNonces, uint32_t * __restrict__ d_ctx_state, bool isMonero)
 {
 	const uint32_t thread = blockDim.x * blockIdx.x + threadIdx.x;
 	if(thread < threads)
@@ -153,9 +151,16 @@ void cryptonight_extra_gpu_final(const uint32_t threads, uint32_t startNonce, co
 		if(branch == 3)
 			cn_skein((const uint8_t *)state, 200, hash);
 
-		uint64_t hashVal = (((uint64_t)hash[7]) << 32) | hash[6];
-		uint64_t targetVal = (((uint64_t)d_target[1]) << 32) | d_target[0];
-		if (hashVal <= targetVal)
+		bool fAccepted;
+		if (isMonero) {
+			fAccepted = hash[7] <= d_target[1] && hash[6] <= d_target[0];
+		} else {
+			// Keva
+			uint64_t hashVal = (((uint64_t)hash[7]) << 32) | hash[6];
+			uint64_t targetVal = (((uint64_t)d_target[1]) << 32) | d_target[0];
+			fAccepted = hashVal <= targetVal;
+		}
+		if (fAccepted)
 		{
 			const uint32_t nonce = startNonce + thread;
 			uint32_t tmp = atomicExch(resNonces, nonce);
@@ -185,19 +190,19 @@ void cryptonight_extra_init(int thr_id)
 }
 
 __host__
-void cryptonight_extra_prepare(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *d_ctx_state, uint32_t *d_ctx_a, uint32_t *d_ctx_b, uint32_t *d_ctx_key1, uint32_t *d_ctx_key2, int variant, uint64_t *d_ctx_tweak)
+void cryptonight_extra_prepare(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *d_ctx_state, uint32_t *d_ctx_a, uint32_t *d_ctx_b, uint32_t *d_ctx_key1, uint32_t *d_ctx_key2, int variant, uint64_t *d_ctx_tweak, bool isMonero)
 {
 	uint32_t threadsperblock = 128;
 
 	dim3 grid((threads + threadsperblock - 1) / threadsperblock);
 	dim3 block(threadsperblock);
 
-	cryptonight_extra_gpu_prepare <<<grid, block>>> (threads, d_input[thr_id], startNonce, d_ctx_state, d_ctx_a, d_ctx_b, d_ctx_key1, d_ctx_key2, variant, d_ctx_tweak);
+	cryptonight_extra_gpu_prepare <<<grid, block>>> (threads, d_input[thr_id], startNonce, d_ctx_state, d_ctx_a, d_ctx_b, d_ctx_key1, d_ctx_key2, variant, d_ctx_tweak, isMonero);
 	exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
 }
 
 __host__
-void cryptonight_extra_final(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *resNonces, uint32_t *d_ctx_state)
+void cryptonight_extra_final(int thr_id, uint32_t threads, uint32_t startNonce, uint32_t *resNonces, uint32_t *d_ctx_state, bool isMonero)
 {
 	uint32_t threadsperblock = 128;
 
@@ -205,7 +210,7 @@ void cryptonight_extra_final(int thr_id, uint32_t threads, uint32_t startNonce, 
 	dim3 block(threadsperblock);
 
 	exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-	cryptonight_extra_gpu_final <<<grid, block>>> (threads, startNonce, d_target[thr_id], d_result[thr_id], d_ctx_state);
+	cryptonight_extra_gpu_final <<<grid, block>>> (threads, startNonce, d_target[thr_id], d_result[thr_id], d_ctx_state, isMonero);
 	exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
 	cudaMemcpy(resNonces, d_result[thr_id], 2 * sizeof(uint32_t), cudaMemcpyDeviceToHost);
 	exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
