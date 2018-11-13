@@ -2519,7 +2519,7 @@ static void *miner_thread(void *userdata)
 				NULL, &tv_start, &tv_end);
 			break;
 		case ALGO_KEVA:
-			rc = scanhash_cryptonight_keva(thr_id, &work, max_nonce, &hashes_done, 1);
+			rc = scanhash_cryptonight_keva(thr_id, &work, max_nonce, &hashes_done, 2);
 			break;
 		case ALGO_SCRYPT_JANE:
 			rc = scanhash_scrypt_jane(thr_id, &work, max_nonce, &hashes_done,

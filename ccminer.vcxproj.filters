@@ -336,7 +336,7 @@
     <ClCompile Include="crypto\cryptolight-cpu.cpp">
       <Filter>Source Files\crypto\xmr</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\cryptonight-cpu.cpp">
+    <ClCompile Include="crypto\cryptonight-cpu.c">
       <Filter>Source Files\crypto\xmr</Filter>
     </ClCompile>
     <ClCompile Include="crypto\mman.c">

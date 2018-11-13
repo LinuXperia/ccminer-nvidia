@@ -234,7 +234,7 @@
     <ClCompile Include="crypto\aesb.cpp" />
     <ClCompile Include="crypto\oaes_lib.cpp" />
     <ClCompile Include="crypto\cryptolight-cpu.cpp" />
-    <ClCompile Include="crypto\cryptonight-cpu.cpp" />
+    <ClCompile Include="crypto\cryptonight-cpu.c" />
     <ClCompile Include="crypto\cpu\c_keccak.c" />
     <ClCompile Include="equi\blake2\blake2bx.cpp">
       <EnableEnhancedInstructionSet Condition="'$(Platform)'=='Win32'">StreamingSIMDExtensions</EnableEnhancedInstructionSet>

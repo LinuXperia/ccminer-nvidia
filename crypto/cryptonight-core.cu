@@ -301,16 +301,15 @@ __device__ __forceinline__ uint32_t fast_sqrt_v2(const uint64_t n1)
 	return result;
 }
 
+constexpr size_t MASK       = CRYPTONIGHT_MASK;
+constexpr size_t ITERATIONS = CRYPTONIGHT_ITER;
+constexpr size_t MEM        = CRYPTONIGHT_MEMORY;
+
 __global__
 void monero_gpu_phase2(const uint32_t threads, const uint16_t bfactor, const uint32_t partidx,
 	uint64_t * __restrict__ d_long_state, uint32_t * __restrict__ d_ctx_a, uint32_t * __restrict__ d_ctx_b,
 	uint64_t * __restrict__ d_tweak)
 {
-
-	constexpr size_t MASK       = CRYPTONIGHT_MASK;
-	constexpr size_t ITERATIONS = CRYPTONIGHT_ITER;
-	constexpr size_t MEM        = CRYPTONIGHT_MEMORY;
-
 	__shared__ uint32_t sharedMemory[1024];
 
 	cn_aes_gpu_init( sharedMemory );
