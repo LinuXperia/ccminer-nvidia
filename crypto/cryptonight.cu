@@ -24,7 +24,9 @@ static uint32_t *d_ctx_b[MAX_GPUS];
 
 static bool init[MAX_GPUS] = { 0 };
 
-extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done, int variant)
+nvid_ctx g_ctx;
+
+extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done, int _variant)
 {
 	int res = 0;
 	uint32_t throughput = 0;
@@ -36,9 +38,8 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 	uint32_t nonce = first_nonce;
 	int dev_id = device_map[thr_id];
 
-	const xmrig::Algo m_algorithm  = xmrig::CRYPTONIGHT;
-	const xmrig::Variant m_variant = xmrig::VARIANT_2;
-	nvid_ctx m_ctx;
+	const xmrig::Algo algorithm  = xmrig::CRYPTONIGHT;
+	const xmrig::Variant variant = xmrig::VARIANT_2;
 
 	if(opt_benchmark) {
 		ptarget[7] = 0x00ff;
@@ -60,13 +61,6 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 		if (!device_config[thr_id] && strcmp(device_name[dev_id], "TITAN V") == 0) {
 			device_config[thr_id] = strdup("80x24");
 		}
-
-		m_ctx.device_id        = dev_id;
-		m_ctx.device_blocks    = cn_blocks;
-	  m_ctx.device_threads   = cn_threads;
-		m_ctx.device_bfactor   = device_bfactor[thr_id];
-		m_ctx.device_bsleep    = m_ctx.device_bfactor ? 100 : 0;
-		m_ctx.syncMode         = 3; //cudaDeviceScheduleBlockingSync
 
 		if (device_config[thr_id]) {
 			int res = sscanf(device_config[thr_id], "%ux%u", &cn_blocks, &cn_threads);
@@ -119,7 +113,14 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 		exit_if_cudaerror(thr_id, __FILE__, __LINE__);
 #endif
 
-		if (cuda_get_deviceinfo(&m_ctx, m_algorithm, false) != 0 || cryptonight_gpu_init(&m_ctx, m_algorithm) != 1) {
+		g_ctx.device_id        = dev_id;
+		g_ctx.device_blocks    = cn_blocks;
+		g_ctx.device_threads   = cn_threads;
+		g_ctx.device_bfactor   = device_bfactor[thr_id];
+		g_ctx.device_bsleep    = g_ctx.device_bfactor ? 100 : 0;
+		g_ctx.syncMode         = 3; //cudaDeviceScheduleBlockingSync
+
+		if (cuda_get_deviceinfo(&g_ctx, algorithm, false) != 0 || cryptonight_gpu_init(&g_ctx, algorithm) != 1) {
         printf("Setup failed for GPU %zu. Exitting.", thr_id);
         exit(1);
     }
@@ -140,16 +141,15 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 		cryptonight_extra_final(thr_id, throughput, nonce, resNonces, d_ctx_state[thr_id], false);
 #endif
 
-		cryptonight_extra_cpu_set_data(&m_ctx, pdata, 20 * sizeof(uint32_t));
+		cryptonight_extra_cpu_set_data(&g_ctx, pdata, 20 * sizeof(uint32_t));
 		//uint32_t foundNonce[10];
 		uint32_t resNonces[10];
-    uint32_t foundCount;
+    uint32_t foundCount = 0;
 		uint64_t* target64 = (uint64_t*)(&ptarget[6]); // endanese?
 
-    cryptonight_extra_cpu_prepare(&m_ctx, nonce, m_algorithm, m_variant);
-    cryptonight_gpu_hash(&m_ctx, m_algorithm, m_variant, nonce);
-    cryptonight_extra_cpu_final(&m_ctx, nonce, *target64, &foundCount, resNonces, m_algorithm);
-
+    cryptonight_extra_cpu_prepare(&g_ctx, nonce, algorithm, variant);
+    cryptonight_gpu_hash(&g_ctx, algorithm, variant, nonce);
+    cryptonight_extra_cpu_final(&g_ctx, nonce, *target64, &foundCount, resNonces, algorithm);
 		res = 0;
     for (size_t i = 0; i < foundCount; i++) {
 #if 0
@@ -161,7 +161,7 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 				uint32_t *tempnonceptr = (uint32_t*)(&tempdata[19]);
 
 				memcpy(tempdata, pdata, 80);
-				*tempnonceptr = resNonces[0];
+				*tempnonceptr = resNonces[i];
 
 				//cryptonight_hash_variant(vhash, tempdata, 80, variant);
 				cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
@@ -169,11 +169,10 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 					work->nonces[i] = resNonces[i];
 					work_set_target_ratio(work, vhash);
 					res ++;
+				} else if (!opt_quiet) {
+						gpulog(LOG_WARNING, thr_id, "result for nonce %08x does not validate on CPU!", resNonces[i]);
 				}
     }
-    nonce += m_ctx.device_blocks * m_ctx.device_threads;
-
-		*hashes_done = nonce - first_nonce + throughput;
 #if 0
 		if(resNonces[0] != UINT32_MAX)
 		{
@@ -213,6 +212,7 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 		}
 #endif
 
+		*hashes_done = nonce - first_nonce + throughput;
 		if ((uint64_t) throughput + nonce >= max_nonce - 127) {
 			nonce = max_nonce;
 			break;
@@ -386,7 +386,7 @@ done:
 	gpulog(LOG_DEBUG, thr_id, "nonce %08x exit", nonce);
 	work->valid_nonces = res;
 	*nonceptr = nonce;
-	cryptonight_extra_cpu_free(&m_ctx, m_algorithm);
+	cryptonight_extra_cpu_free(&g_ctx, algorithm);
 	return res;
 #endif
 }
