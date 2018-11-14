@@ -172,6 +172,10 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 				} else if (!opt_quiet) {
 						gpulog(LOG_WARNING, thr_id, "result for nonce %08x does not validate on CPU!", resNonces[i]);
 				}
+
+				if (res > 0) {
+					goto done;
+				}
     }
 #if 0
 		if(resNonces[0] != UINT32_MAX)
