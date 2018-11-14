@@ -172,7 +172,12 @@ __global__ void cryptonight_extra_gpu_prepare(
     memcpy(input, d_input, len);
     uint32_t nonce = startNonce + thread;
     for (int i = 0; i < sizeof (uint32_t ); ++i) {
+#if 0
         (((char *)input) + 39)[i] = ((char*) (&nonce))[i]; //take care of pointer alignment
+#else
+        // For Keva nonce
+        (((char *)input) + 76)[i] = ((char*) (&nonce))[i]; //take care of pointer alignment
+#endif
     }
 
     cn_keccak((uint8_t *) input, len, (uint8_t *) ctx_state);

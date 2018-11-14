@@ -166,7 +166,7 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 				//cryptonight_hash_variant(vhash, tempdata, 80, variant);
 				cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
 				if(vhash[7] <= Htarg && fulltest(vhash, ptarget)) {
-					work->nonces[0] = resNonces[0];
+					work->nonces[i] = resNonces[i];
 					work_set_target_ratio(work, vhash);
 					res ++;
 				}
@@ -301,6 +301,7 @@ extern "C" int scanhash_cryptonight(int thr_id, struct work* work, uint32_t max_
 		const size_t alloc = MEMORY * throughput;
 		cryptonight_extra_init(thr_id);
 
+#if 0
 		cudaMalloc(&d_long_state[thr_id], alloc);
 		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
 		cudaMalloc(&d_ctx_state[thr_id], 50 * sizeof(uint32_t) * throughput);
@@ -317,6 +318,7 @@ extern "C" int scanhash_cryptonight(int thr_id, struct work* work, uint32_t max_
 		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
 		cudaMalloc(&d_ctx_tweak[thr_id], sizeof(uint64_t) * throughput);
 		exit_if_cudaerror(thr_id, __FILE__, __LINE__);
+#endif
 
 		gpu_init_shown = true;
 		init[thr_id] = true;
@@ -384,6 +386,7 @@ done:
 	gpulog(LOG_DEBUG, thr_id, "nonce %08x exit", nonce);
 	work->valid_nonces = res;
 	*nonceptr = nonce;
+	cryptonight_extra_cpu_free(&m_ctx, m_algorithm);
 	return res;
 #endif
 }
