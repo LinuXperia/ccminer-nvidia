@@ -1,7 +1,9 @@
-
+#include <cuda_runtime.h>
+#include <miner.h>
 #include "cryptonight.h"
 
 extern char *device_config[MAX_GPUS]; // -l 32x16
+extern int device_bfactor[MAX_GPUS];
 
 static __thread uint32_t cn_blocks;
 static __thread uint32_t cn_threads;
@@ -34,6 +36,10 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 	uint32_t nonce = first_nonce;
 	int dev_id = device_map[thr_id];
 
+	const xmrig::Algo m_algorithm  = xmrig::CRYPTONIGHT;
+	const xmrig::Variant m_variant = xmrig::VARIANT_2;
+	nvid_ctx m_ctx;
+
 	if(opt_benchmark) {
 		ptarget[7] = 0x00ff;
 	}
@@ -44,6 +50,7 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 		int mul = device_sm[dev_id] >= 300 ? 4 : 1; // see cryptonight-core.cu
 		cn_threads = device_sm[dev_id] >= 600 ? 16 : 8; // real TPB is x4 on SM3+
 		cn_blocks = device_mpcount[dev_id] * 4;
+
 		if (cn_blocks*cn_threads*2.2 > mem) cn_blocks = device_mpcount[dev_id] * 2;
 
 		if (!opt_quiet)
@@ -53,6 +60,13 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 		if (!device_config[thr_id] && strcmp(device_name[dev_id], "TITAN V") == 0) {
 			device_config[thr_id] = strdup("80x24");
 		}
+
+		m_ctx.device_id        = dev_id;
+		m_ctx.device_blocks    = cn_blocks;
+	  m_ctx.device_threads   = cn_threads;
+		m_ctx.device_bfactor   = device_bfactor[thr_id];
+		m_ctx.device_bsleep    = m_ctx.device_bfactor ? 100 : 0;
+		m_ctx.syncMode         = 3; //cudaDeviceScheduleBlockingSync
 
 		if (device_config[thr_id]) {
 			int res = sscanf(device_config[thr_id], "%ux%u", &cn_blocks, &cn_threads);
@@ -83,6 +97,7 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 			CUDA_LOG_ERROR();
 		}
 
+#if 0
 		const size_t alloc = MEMORY * throughput;
 		cryptonight_extra_init(thr_id);
 
@@ -102,6 +117,12 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
 		cudaMalloc(&d_ctx_tweak[thr_id], sizeof(uint64_t) * throughput);
 		exit_if_cudaerror(thr_id, __FILE__, __LINE__);
+#endif
+
+		if (cuda_get_deviceinfo(&m_ctx, m_algorithm, false) != 0 || cryptonight_gpu_init(&m_ctx, m_algorithm) != 1) {
+        printf("Setup failed for GPU %zu. Exitting.", thr_id);
+        exit(1);
+    }
 
 		gpu_init_shown = true;
 		init[thr_id] = true;
@@ -111,13 +132,49 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 	do
 	{
 		const uint32_t Htarg = ptarget[7];
-		uint32_t resNonces[2] = { UINT32_MAX, UINT32_MAX };
+
+#if 0
 		cryptonight_extra_setData(thr_id, pdata, ptarget);
 		cryptonight_extra_prepare(thr_id, throughput, nonce, d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id], false);
 		cryptonight_core_cuda(thr_id, cn_blocks, cn_threads, d_long_state[thr_id], d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id]);
 		cryptonight_extra_final(thr_id, throughput, nonce, resNonces, d_ctx_state[thr_id], false);
+#endif
+
+		cryptonight_extra_cpu_set_data(&m_ctx, pdata, 20 * sizeof(uint32_t));
+		//uint32_t foundNonce[10];
+		uint32_t resNonces[10];
+    uint32_t foundCount;
+		uint64_t* target64 = (uint64_t*)(&ptarget[6]); // endanese?
+
+    cryptonight_extra_cpu_prepare(&m_ctx, nonce, m_algorithm, m_variant);
+    cryptonight_gpu_hash(&m_ctx, m_algorithm, m_variant, nonce);
+    cryptonight_extra_cpu_final(&m_ctx, nonce, *target64, &foundCount, resNonces, m_algorithm);
+
+		res = 0;
+    for (size_t i = 0; i < foundCount; i++) {
+#if 0
+        *m_job.nonce() = foundNonce[i];
+        Workers::submit(m_job);
+#endif
+				uint32_t vhash[8];
+				uint32_t tempdata[20];
+				uint32_t *tempnonceptr = (uint32_t*)(&tempdata[19]);
+
+				memcpy(tempdata, pdata, 80);
+				*tempnonceptr = resNonces[0];
+
+				//cryptonight_hash_variant(vhash, tempdata, 80, variant);
+				cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
+				if(vhash[7] <= Htarg && fulltest(vhash, ptarget)) {
+					work->nonces[0] = resNonces[0];
+					work_set_target_ratio(work, vhash);
+					res ++;
+				}
+    }
+    nonce += m_ctx.device_blocks * m_ctx.device_threads;
 
 		*hashes_done = nonce - first_nonce + throughput;
+#if 0
 		if(resNonces[0] != UINT32_MAX)
 		{
 			uint32_t vhash[8];
@@ -154,6 +211,7 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 					gpulog(LOG_WARNING, thr_id, "result for nonce %08x does not validate on CPU!", resNonces[0]);
 			}
 		}
+#endif
 
 		if ((uint64_t) throughput + nonce >= max_nonce - 127) {
 			nonce = max_nonce;
@@ -180,6 +238,7 @@ done:
 
 extern "C" int scanhash_cryptonight(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done, int variant)
 {
+#if 0
 	int res = 0;
 	uint32_t throughput = 0;
 
@@ -326,10 +385,12 @@ done:
 	work->valid_nonces = res;
 	*nonceptr = nonce;
 	return res;
+#endif
 }
 
 void free_cryptonight(int thr_id)
 {
+#if 0
 	if (!init[thr_id])
 		return;
 
@@ -347,4 +408,5 @@ void free_cryptonight(int thr_id)
 	cudaDeviceSynchronize();
 
 	init[thr_id] = false;
+#endif
 }

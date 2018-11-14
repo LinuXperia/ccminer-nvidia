@@ -19,6 +19,7 @@ static bool init[MAX_GPUS] = { 0 };
 
 extern "C" int scanhash_cryptolight(int thr_id, struct work* work, uint32_t max_nonce, unsigned long *hashes_done, int variant)
 {
+#if 0
 	int res = 0;
 	uint32_t throughput = 0;
 
@@ -152,10 +153,14 @@ done:
 	work->valid_nonces = res;
 	*nonceptr = nonce;
 	return res;
+#else
+	return 0;
+#endif
 }
 
 void free_cryptolight(int thr_id)
 {
+#if 0
 	if (!init[thr_id])
 		return;
 
@@ -173,4 +178,5 @@ void free_cryptolight(int thr_id)
 	cudaDeviceSynchronize();
 
 	init[thr_id] = false;
+#endif	
 }
