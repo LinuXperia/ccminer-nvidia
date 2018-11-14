@@ -569,7 +569,7 @@ void cryptonight_core_cuda(int thr_id, uint32_t blocks, uint32_t threads, uint64
 		dim3 b = device_sm[dev_id] >= 300 ? block4 : block;
 		if (variant == 0) {
 			cryptonight_gpu_phase2 <<<grid, b>>> (throughput, bfactor, i, d_long_state, d_ctx_a, d_ctx_b);
-		}	else if (variant == 1 || cryptonight_fork == 8) {
+		}	else if (variant == 2 || cryptonight_fork == 8) {
 			monero_gpu_phase2 <<<
 				grid,
 				block2,
