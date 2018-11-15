@@ -18,7 +18,9 @@ struct uint3  blockDim;
 #define __shfl(a,b,c) 1
 #endif
 
+#ifndef AES_BLOCK_SIZE
 #define AES_BLOCK_SIZE  16
+#endif
 #define AES_KEY_SIZE    32
 #define INIT_SIZE_BLK   8
 #define INIT_SIZE_BYTE (INIT_SIZE_BLK * AES_BLOCK_SIZE) // 128 B

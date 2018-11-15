@@ -173,6 +173,7 @@ __global__ void cryptonight_extra_gpu_prepare(
     uint32_t nonce = startNonce + thread;
     for (int i = 0; i < sizeof (uint32_t ); ++i) {
 #if 0
+        // Monero
         (((char *)input) + 39)[i] = ((char*) (&nonce))[i]; //take care of pointer alignment
 #else
         // For Keva nonce
@@ -180,7 +181,7 @@ __global__ void cryptonight_extra_gpu_prepare(
 #endif
     }
 
-    cn_keccak((uint8_t *) input, len, (uint8_t *) ctx_state);
+    cn_keccak((uint32_t *) input, len, (uint64_t *) ctx_state);
     cryptonight_aes_set_key(ctx_key1, ctx_state);
     cryptonight_aes_set_key(ctx_key2, ctx_state + 8);
 

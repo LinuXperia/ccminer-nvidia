@@ -13,14 +13,6 @@ static __thread bool gpu_init_shown = false;
 #define gpulog_init(p,thr,fmt, ...) if (!gpu_init_shown) \
 	gpulog(p, thr, fmt, ##__VA_ARGS__)
 
-static uint64_t *d_long_state[MAX_GPUS];
-static uint32_t *d_ctx_state[MAX_GPUS];
-static uint32_t *d_ctx_key1[MAX_GPUS];
-static uint32_t *d_ctx_key2[MAX_GPUS];
-static uint32_t *d_ctx_text[MAX_GPUS];
-static uint64_t *d_ctx_tweak[MAX_GPUS];
-static uint32_t *d_ctx_a[MAX_GPUS];
-static uint32_t *d_ctx_b[MAX_GPUS];
 
 static bool init[MAX_GPUS] = { 0 };
 
@@ -91,28 +83,6 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 			CUDA_LOG_ERROR();
 		}
 
-#if 0
-		const size_t alloc = MEMORY * throughput;
-		cryptonight_extra_init(thr_id);
-
-		cudaMalloc(&d_long_state[thr_id], alloc);
-		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-		cudaMalloc(&d_ctx_state[thr_id], 50 * sizeof(uint32_t) * throughput);
-		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-		cudaMalloc(&d_ctx_key1[thr_id], 40 * sizeof(uint32_t) * throughput);
-		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-		cudaMalloc(&d_ctx_key2[thr_id], 40 * sizeof(uint32_t) * throughput);
-		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-		cudaMalloc(&d_ctx_text[thr_id], 32 * sizeof(uint32_t) * throughput);
-		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-		cudaMalloc(&d_ctx_a[thr_id], 4 * sizeof(uint32_t) * throughput);
-		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-		cudaMalloc(&d_ctx_b[thr_id], 4 * sizeof(uint32_t) * throughput);
-		exit_if_cudaerror(thr_id, __FUNCTION__, __LINE__);
-		cudaMalloc(&d_ctx_tweak[thr_id], sizeof(uint64_t) * throughput);
-		exit_if_cudaerror(thr_id, __FILE__, __LINE__);
-#endif
-
 		g_ctx.device_id        = dev_id;
 		g_ctx.device_blocks    = cn_blocks;
 		g_ctx.device_threads   = cn_threads;
@@ -130,40 +100,25 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 	}
 
 	throughput = cn_blocks*cn_threads;
+
+	uint64_t* target64 = (uint64_t*)(&ptarget[6]); // endanese?
+	const uint32_t Htarg = ptarget[7];
+	cryptonight_extra_cpu_set_data(&g_ctx, pdata, 20 * sizeof(uint32_t));
 	do
 	{
-		const uint32_t Htarg = ptarget[7];
-
-#if 0
-		cryptonight_extra_setData(thr_id, pdata, ptarget);
-		cryptonight_extra_prepare(thr_id, throughput, nonce, d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id], false);
-		cryptonight_core_cuda(thr_id, cn_blocks, cn_threads, d_long_state[thr_id], d_ctx_state[thr_id], d_ctx_a[thr_id], d_ctx_b[thr_id], d_ctx_key1[thr_id], d_ctx_key2[thr_id], variant, d_ctx_tweak[thr_id]);
-		cryptonight_extra_final(thr_id, throughput, nonce, resNonces, d_ctx_state[thr_id], false);
-#endif
-
-		cryptonight_extra_cpu_set_data(&g_ctx, pdata, 20 * sizeof(uint32_t));
-		//uint32_t foundNonce[10];
 		uint32_t resNonces[10];
     uint32_t foundCount = 0;
-		uint64_t* target64 = (uint64_t*)(&ptarget[6]); // endanese?
 
     cryptonight_extra_cpu_prepare(&g_ctx, nonce, algorithm, variant);
     cryptonight_gpu_hash(&g_ctx, algorithm, variant, nonce);
     cryptonight_extra_cpu_final(&g_ctx, nonce, *target64, &foundCount, resNonces, algorithm);
 		res = 0;
     for (size_t i = 0; i < foundCount; i++) {
-#if 0
-        *m_job.nonce() = foundNonce[i];
-        Workers::submit(m_job);
-#endif
 				uint32_t vhash[8];
 				uint32_t tempdata[20];
 				uint32_t *tempnonceptr = (uint32_t*)(&tempdata[19]);
-
 				memcpy(tempdata, pdata, 80);
 				*tempnonceptr = resNonces[i];
-
-				//cryptonight_hash_variant(vhash, tempdata, 80, variant);
 				cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
 				if(vhash[7] <= Htarg && fulltest(vhash, ptarget)) {
 					work->nonces[i] = resNonces[i];
@@ -177,44 +132,6 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 					goto done;
 				}
     }
-#if 0
-		if(resNonces[0] != UINT32_MAX)
-		{
-			uint32_t vhash[8];
-			uint32_t tempdata[20];
-			uint32_t *tempnonceptr = (uint32_t*)(&tempdata[19]);
-
-			memcpy(tempdata, pdata, 80);
-			*tempnonceptr = resNonces[0];
-
-			//cryptonight_hash_variant(vhash, tempdata, 80, variant);
-			cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
-			if(vhash[7] <= Htarg && fulltest(vhash, ptarget))
-			{
-				res = 1;
-				work->nonces[0] = resNonces[0];
-				work_set_target_ratio(work, vhash);
-				// second nonce
-				if(resNonces[1] != UINT32_MAX)
-				{
-					*tempnonceptr = resNonces[1];
-					//cryptonight_hash_variant(vhash, tempdata, 80, variant);
-					cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
-					if(vhash[7] <= Htarg && fulltest(vhash, ptarget)) {
-						res++;
-						work->nonces[1] = resNonces[1];
-					} else {
-						gpu_increment_reject(thr_id);
-					}
-				}
-				goto done;
-			} else if (vhash[7] > Htarg) {
-				gpu_increment_reject(thr_id);
-				if (!opt_quiet)
-					gpulog(LOG_WARNING, thr_id, "result for nonce %08x does not validate on CPU!", resNonces[0]);
-			}
-		}
-#endif
 
 		*hashes_done = nonce - first_nonce + throughput;
 		if ((uint64_t) throughput + nonce >= max_nonce - 127) {
