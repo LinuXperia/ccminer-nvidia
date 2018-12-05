@@ -1040,4 +1040,12 @@
       <Filter>Ressources</Filter>
     </Text>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="crypto\cuda_core.cu">
+      <Filter>Source Files\CUDA</Filter>
+    </None>
+    <None Include="crypto\cuda_extra.cu">
+      <Filter>Source Files\CUDA</Filter>
+    </None>
+  </ItemGroup>
 </Project>

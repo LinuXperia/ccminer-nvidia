@@ -8,7 +8,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#if !defined(_MSC_VER)
 #include <sys/param.h>
+#endif
 
 /*
  * Create GNU compatible endian macros. We use the values for __LITTLE_ENDIAN
@@ -176,6 +178,12 @@ static inline void memcpy_swap64(void *dst, const void *src, size_t n) {
     ((uint64_t *) dst)[i] = swap64(((const uint64_t *) src)[i]);
   }
 }
+
+#if defined(_MSC_VER)
+#define LITTLE_ENDIAN	1234
+#define BIG_ENDIAN		4321
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif
 
 #if !defined(BYTE_ORDER) || !defined(LITTLE_ENDIAN) || !defined(BIG_ENDIAN)
 #if __STDC_VERSION__ - 0 >= 201112L
