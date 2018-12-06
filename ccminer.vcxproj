@@ -239,7 +239,6 @@
     <ClCompile Include="crypto\mman.c" />
     <ClCompile Include="crypto\wildkeccak-cpu.cpp" />
     <ClCompile Include="crypto\xmr-rpc.cpp" />
-    <ClCompile Include="crypto\oaes_lib.cpp" />
     <ClCompile Include="crypto\cryptolight-cpu.cpp" />
     <ClCompile Include="crypto\cryptonight-cpu.c" />
     <ClCompile Include="crypto\cpu\c_keccak.c" />

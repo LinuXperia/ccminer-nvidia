@@ -252,9 +252,6 @@
     <ClCompile Include="crypto\cpu\c_keccak.c">
       <Filter>Source Files\crypto\xmr</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\oaes_lib.cpp">
-      <Filter>Source Files\crypto\xmr</Filter>
-    </ClCompile>
     <ClCompile Include="crypto\cryptolight-cpu.cpp">
       <Filter>Source Files\crypto\xmr</Filter>
     </ClCompile>

@@ -14,6 +14,11 @@
 */
 #ifdef _WIN32
 #define CUDA_CHECK(id, ...) {                                                                             \
+cudaError_t error = __VA_ARGS__;                                                                          \
+    if(error!=cudaSuccess){																				  \
+		printf("[CUDA] Error gpu: %d, function: %s,  line: %d, error: %s \n",                             \
+			id, __FUNCTION__, __LINE__, cudaGetErrorString(error));                                       \
+	}                                                                                                     \
 }                                                                                                         \
 ( (void) 0 )
 #else
