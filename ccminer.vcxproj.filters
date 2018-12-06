@@ -121,6 +121,9 @@
     <Filter Include="Source Files\CUDA\x12">
       <UniqueIdentifier>{xde48d89-fx12-1323-129a-b592fe2b2de3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\crypto\cpu">
+      <UniqueIdentifier>{e39e5691-f90e-431d-bbc3-91235a4ce448}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="compat\jansson\dump.c">
@@ -324,9 +327,6 @@
     <ClCompile Include="crypto\xmr-rpc.cpp">
       <Filter>Source Files\crypto</Filter>
     </ClCompile>
-    <ClCompile Include="crypto\aesb.cpp">
-      <Filter>Source Files\crypto\xmr</Filter>
-    </ClCompile>
     <ClCompile Include="crypto\cpu\c_keccak.c">
       <Filter>Source Files\crypto\xmr</Filter>
     </ClCompile>
@@ -356,6 +356,27 @@
     </ClCompile>
     <ClCompile Include="equi\blake2\blake2bx.cpp">
       <Filter>Source Files\equi</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cpu\aesb.c">
+      <Filter>Source Files\crypto\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cpu\c_blake256.c">
+      <Filter>Source Files\crypto\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cpu\c_groestl.c">
+      <Filter>Source Files\crypto\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cpu\c_jh.c">
+      <Filter>Source Files\crypto\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cpu\c_skein.c">
+      <Filter>Source Files\crypto\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cpu\hash.c">
+      <Filter>Source Files\crypto\cpu</Filter>
+    </ClCompile>
+    <ClCompile Include="crypto\cpu\oaes_lib.c">
+      <Filter>Source Files\crypto\cpu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -988,12 +1009,6 @@
     <CudaCompile Include="crypto\cryptonight.cu">
       <Filter>Source Files\CUDA\xmr</Filter>
     </CudaCompile>
-    <CudaCompile Include="crypto\cryptonight-core.cu">
-      <Filter>Source Files\CUDA\xmr</Filter>
-    </CudaCompile>
-    <CudaCompile Include="crypto\cryptonight-extra.cu">
-      <Filter>Source Files\CUDA\xmr</Filter>
-    </CudaCompile>
     <CudaCompile Include="crypto\wildkeccak.cu">
       <Filter>Source Files\CUDA</Filter>
     </CudaCompile>
@@ -1024,6 +1039,12 @@
     <CudaCompile Include="x16\x16s.cu">
       <Filter>Source Files\CUDA\x16</Filter>
     </CudaCompile>
+    <CudaCompile Include="crypto\cuda_core.cu">
+      <Filter>Source Files\CUDA\xmr</Filter>
+    </CudaCompile>
+    <CudaCompile Include="crypto\cuda_extra.cu">
+      <Filter>Source Files\CUDA\xmr</Filter>
+    </CudaCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ccminer.ico">
@@ -1039,13 +1060,5 @@
     <Text Include="README.txt">
       <Filter>Ressources</Filter>
     </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="crypto\cuda_core.cu">
-      <Filter>Source Files\CUDA</Filter>
-    </None>
-    <None Include="crypto\cuda_extra.cu">
-      <Filter>Source Files\CUDA</Filter>
-    </None>
   </ItemGroup>
 </Project>

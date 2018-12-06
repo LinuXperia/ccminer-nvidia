@@ -29,47 +29,6 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-#ifdef _WIN32
-#include <Windows.h>
-static void compat_usleep(int waitTime)
-{
-    if (waitTime > 0) {
-        if (waitTime > 100) {
-            // use a waitable timer for larger intervals > 0.1ms
-
-            HANDLE timer;
-            LARGE_INTEGER ft;
-
-            ft.QuadPart = -10ll * int64_t(waitTime); // Convert to 100 nanosecond interval, negative value indicates relative time
-
-            timer = CreateWaitableTimer(nullptr, TRUE, nullptr);
-            SetWaitableTimer(timer, &ft, 0, nullptr, nullptr, 0);
-            WaitForSingleObject(timer, INFINITE);
-            CloseHandle(timer);
-        } else {
-            // use a polling loop for short intervals <= 0.1ms
-
-            LARGE_INTEGER perfCnt, start, now;
-            int64_t elapsed;
-
-            QueryPerformanceFrequency(&perfCnt);
-            QueryPerformanceCounter(&start);
-            do {
-                SwitchToThread();
-                QueryPerformanceCounter(&now);
-                elapsed = static_cast<int64_t>(((now.QuadPart - start.QuadPart) / static_cast<float>(perfCnt.QuadPart) * 1000 * 1000));
-            } while (elapsed < static_cast<int64_t>(waitTime));
-        }
-    }
-}
-#else
-#include <unistd.h>
-static inline void compat_usleep(int waitTime)
-{
-    usleep(static_cast<uint64_t>(waitTime));
-}
-#endif
-
 #include "cryptonight.h"
 #include "cuda_extra.h"
 #include "cuda_aes.hpp"
@@ -79,6 +38,49 @@ static inline void compat_usleep(int waitTime)
 #include "cuda_fast_int_math_v2.hpp"
 #include "xmrig.h"
 #include "crypto/CryptoNight_constants.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+static void compat_usleep(int waitTime)
+{
+	if (waitTime > 0) {
+		if (waitTime > 100) {
+			// use a waitable timer for larger intervals > 0.1ms
+
+			HANDLE timer;
+			LARGE_INTEGER ft;
+
+			ft.QuadPart = -10ll * int64_t(waitTime); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+			timer = CreateWaitableTimer(nullptr, TRUE, nullptr);
+			SetWaitableTimer(timer, &ft, 0, nullptr, nullptr, 0);
+			WaitForSingleObject(timer, INFINITE);
+			CloseHandle(timer);
+		}
+		else {
+			// use a polling loop for short intervals <= 0.1ms
+
+			LARGE_INTEGER perfCnt, start, now;
+			int64_t elapsed;
+
+			QueryPerformanceFrequency(&perfCnt);
+			QueryPerformanceCounter(&start);
+			do {
+				SwitchToThread();
+				QueryPerformanceCounter(&now);
+				elapsed = static_cast<int64_t>(((now.QuadPart - start.QuadPart) / static_cast<float>(perfCnt.QuadPart) * 1000 * 1000));
+			} while (elapsed < static_cast<int64_t>(waitTime));
+		}
+	}
+}
+#else
+#include <unistd.h>
+static inline void compat_usleep(int waitTime)
+{
+	usleep(static_cast<uint64_t>(waitTime));
+}
+#endif
+
 
 #if defined(__x86_64__) || defined(_M_AMD64) || defined(__LP64__)
 #   define _ASM_PTR_ "l"

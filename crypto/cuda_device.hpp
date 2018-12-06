@@ -1,15 +1,22 @@
 #pragma once
 
+#ifndef _WIN32
 #include <cuda_runtime.h>
 #include <stdexcept>
 #include <iostream>
 #include <string>
+#endif
 
 /** execute and check a CUDA api command
 *
 * @param id gpu id (thread id)
 * @param ... CUDA api command
 */
+#ifdef _WIN32
+#define CUDA_CHECK(id, ...) {                                                                             \
+}                                                                                                         \
+( (void) 0 )
+#else
 #define CUDA_CHECK(id, ...) {                                                                             \
     cudaError_t error = __VA_ARGS__;                                                                      \
     if(error!=cudaSuccess){                                                                               \
@@ -18,6 +25,7 @@
     }                                                                                                     \
 }                                                                                                         \
 ( (void) 0 )
+#endif
 
 /** execute and check a CUDA kernel
 *

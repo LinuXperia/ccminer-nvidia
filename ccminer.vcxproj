@@ -101,7 +101,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>cudart_static.lib;cuda.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;pthreadVC2.lib;libcurl.x64.lib;openssl.x64.lib;zlib.x64.lib;ws2_32.lib;Wldap32.lib;nvapi64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart_static.lib;cuda.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;pthreadVC2.lib;libcurl.x64.lib;openssl.x64.lib;libssl.x64.lib;zlib.x64.lib;ws2_32.lib;Wldap32.lib;nvapi64.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>compat\pthreads\x64;compat\curl-for-windows\out\x64\Release\lib;compat\nvapi\amd64;%(AdditionalLibraryDirectories);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
       <AdditionalOptions>/NODEFAULTLIB:LIBCMTD %(AdditionalOptions)</AdditionalOptions>
@@ -187,7 +187,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;pthreadVC2.lib;libcurl.x64.lib;openssl.x64.lib;zlib.x64.lib;ws2_32.lib;Wldap32.lib;cudart_static.lib;cuda.lib;nvapi64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;pthreadVC2.lib;libcurl.x64.lib;openssl.x64.lib;libssl.x64.lib;zlib.x64.lib;ws2_32.lib;Wldap32.lib;cudart_static.lib;cuda.lib;nvapi64.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>compat\pthreads\x64;compat\curl-for-windows\out\x64\Release\lib;compat\nvapi\amd64;%(AdditionalLibraryDirectories);$(CudaToolkitLibDir)</AdditionalLibraryDirectories>
       <AdditionalOptions>/NODEFAULTLIB:LIBCMT %(AdditionalOptions)</AdditionalOptions>
@@ -229,10 +229,16 @@
       <TreatWChar_tAsBuiltInType>false</TreatWChar_tAsBuiltInType>
       <Optimization Condition="'$(Configuration)'=='Release'">Full</Optimization>
     </ClCompile>
+    <ClCompile Include="crypto\cpu\aesb.c" />
+    <ClCompile Include="crypto\cpu\c_blake256.c" />
+    <ClCompile Include="crypto\cpu\c_groestl.c" />
+    <ClCompile Include="crypto\cpu\c_jh.c" />
+    <ClCompile Include="crypto\cpu\c_skein.c" />
+    <ClCompile Include="crypto\cpu\hash.c" />
+    <ClCompile Include="crypto\cpu\oaes_lib.c" />
     <ClCompile Include="crypto\mman.c" />
     <ClCompile Include="crypto\wildkeccak-cpu.cpp" />
     <ClCompile Include="crypto\xmr-rpc.cpp" />
-    <ClCompile Include="crypto\aesb.cpp" />
     <ClCompile Include="crypto\oaes_lib.cpp" />
     <ClCompile Include="crypto\cryptolight-cpu.cpp" />
     <ClCompile Include="crypto\cryptonight-cpu.c" />
@@ -280,12 +286,6 @@
       <MaxRegCount>64</MaxRegCount>
     </CudaCompile>
     <CudaCompile Include="crypto\cryptonight.cu" />
-    <CudaCompile Include="crypto\cryptonight-core.cu">
-      <MaxRegCount>64</MaxRegCount>
-    </CudaCompile>
-    <CudaCompile Include="crypto\cryptonight-extra.cu">
-      <MaxRegCount>255</MaxRegCount>
-    </CudaCompile>
     <ClInclude Include="crypto\cn_aes.cuh" />
     <ClInclude Include="crypto\cn_blake.cuh" />
     <ClInclude Include="crypto\cn_groestl.cuh" />
@@ -623,8 +623,12 @@
     <Text Include="README.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="crypto\cuda_core.cu" />
-    <None Include="crypto\cuda_extra.cu" />
+    <CudaCompile Include="crypto\cuda_core.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
+    <CudaCompile Include="crypto\cuda_extra.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
