@@ -473,8 +473,6 @@ bool rpc2_job_decode(const json_t *job, struct work *work)
 		snprintf(work->job_id, sizeof(work->job_id), "%s", rpc2_job_id);
 	}
 
-	if (opt_algo == ALGO_WILDKECCAK)
-		wildkeccak_scratchpad_need_update(pscratchpad_buff);
 	return true;
 
 err_out:
@@ -981,7 +979,7 @@ void GetScratchpad()
 
 	if (pscratchpad_buff) {
 		reset_scratchpad();
-		wildkeccak_scratchpad_need_update(NULL);
+		//wildkeccak_scratchpad_need_update(NULL);
 		scratchpad_need_update = true;
 		free(pscratchpad_buff);
 		pscratchpad_buff = NULL;
@@ -1016,9 +1014,10 @@ void GetScratchpad()
 			exit(1);
 		}
 	}
-
+#if 0
 	if (scratchpad_need_update)
 		wildkeccak_scratchpad_need_update(pscratchpad_buff);
+#endif
 }
 
 #endif /* GetScratchpad() linux */
