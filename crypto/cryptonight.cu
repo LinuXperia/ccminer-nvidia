@@ -107,33 +107,31 @@ extern "C" int scanhash_cryptonight_keva(int thr_id, struct work* work, uint32_t
 	do
 	{
 		uint32_t resNonces[10];
-    uint32_t foundCount = 0;
+		uint32_t foundCount = 0;
 
-    cryptonight_extra_cpu_prepare(&g_ctx, nonce, algorithm, variant);
-    cryptonight_gpu_hash(&g_ctx, algorithm, variant, nonce);
-    cryptonight_extra_cpu_final(&g_ctx, nonce, *target64, &foundCount, resNonces, algorithm);
+		cryptonight_extra_cpu_prepare(&g_ctx, nonce, algorithm, variant);
+		cryptonight_gpu_hash(&g_ctx, algorithm, variant, nonce);
+		cryptonight_extra_cpu_final(&g_ctx, nonce, *target64, &foundCount, resNonces, algorithm);
 		res = 0;
-    for (size_t i = 0; i < foundCount; i++) {
-				uint32_t vhash[8];
-				uint32_t tempdata[20];
-				uint32_t *tempnonceptr = (uint32_t*)(&tempdata[19]);
-				memcpy(tempdata, pdata, 80);
-				*tempnonceptr = resNonces[i];
-				cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
-				if(vhash[7] <= Htarg && fulltest(vhash, ptarget)) {
-					work->nonces[i] = resNonces[i];
-					work_set_target_ratio(work, vhash);
-					res ++;
-				} else if (!opt_quiet) {
-						gpulog(LOG_WARNING, thr_id, "result for nonce %08x does not validate on CPU!", resNonces[i]);
-				}
-
-				if (res > 0) {
-					goto done;
-				}
-    }
-
+		for (size_t i = 0; i < foundCount; i++) {
+			uint32_t vhash[8];
+			uint32_t tempdata[20];
+			uint32_t *tempnonceptr = (uint32_t*)(&tempdata[19]);
+			memcpy(tempdata, pdata, 80);
+			*tempnonceptr = resNonces[i];
+			cryptonight_hash((const char*)tempdata, (char*)vhash, 80, variant);
+			if(vhash[7] <= Htarg && fulltest(vhash, ptarget)) {
+				work->nonces[i] = resNonces[i];
+				work_set_target_ratio(work, vhash);
+				res ++;
+			} else if (!opt_quiet) {
+					gpulog(LOG_WARNING, thr_id, "result for nonce %08x does not validate on CPU!", resNonces[i]);
+			}
+		}
 		*hashes_done = nonce - first_nonce + throughput;
+		if (res > 0) {
+			goto done;
+		}
 		if ((uint64_t) throughput + nonce >= max_nonce - 127) {
 			nonce = max_nonce;
 			break;
