@@ -65,8 +65,10 @@ BOOL WINAPI ConsoleHandler(DWORD);
 nvml_handle *hnvml = NULL;
 #endif
 
+#ifdef _MSC_VER
 int cuda_arch[MAX_GPUS] = { 0 };
 uint64_t scratchpad_size;
+#endif
 
 enum workio_commands {
 	WC_GET_WORK,
